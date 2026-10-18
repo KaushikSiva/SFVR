@@ -4,6 +4,7 @@ import {Sound} from './audio';
 import {buildLevel} from './level';
 import {makeBlaster,makeDrone} from './drone';
 import {Locomotion} from './locomotion';
+import {HandTrigger,measureTrigger} from './hand-trigger';
 import type {Target} from './game';
 
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -50,18 +51,41 @@ xrHud.name='XR status and movement';xrHud.position.set(0,-.39,-1.45);xrHud.rende
 let hudLast='',hudTime=0,domUpdateAt=0;
 function drawXRHUD(){
  const message=locomotion.aiming?'RELEASE PINCH TO MOVE':game.phase==='ready'?'POINT + PINCH TO START':game.phase==='over'?'ROUND OVER · SELECT TO PLAY AGAIN':game.phase==='paused'?'PAUSED · SELECT TO RESUME':`SCORE ${String(game.score).padStart(5,'0')}    ${game.remaining}s    SHIELDS ${game.shields}`;
- const detail=locomotion.aiming?(locomotion.valid?'CLEAR DESTINATION':'CHOOSE CLEAR GROUND INSIDE THE PARK'):game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:'AIM AT THE DRONES'}`):'SFVR / ALAMO SQUARE';
- const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,167);hudContext.font='20px monospace';hudContext.fillStyle='#dedbd0';hudContext.fillText('AIM AT GROUND + PINCH TO MOVE',430,222);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(840,183,170,57);hudContext.font='bold 24px monospace';hudContext.fillStyle='#14212a';hudContext.fillText('HOME',925,221);hudTexture.needsUpdate=true;
+ const detail=locomotion.aiming?(locomotion.valid?'CLEAR DESTINATION':'CHOOSE CLEAR GROUND INSIDE THE PARK'):game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:([...handTriggers.values()].some(t=>t.state==='ready')?'TRIGGER READY · CURL INDEX':'THUMB UP · EXTEND INDEX')}`):'SFVR / ALAMO SQUARE';
+ const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,167);hudContext.font='22px monospace';hudContext.fillStyle='#dedbd0';hudContext.fillText('CURL INDEX TO FIRE · PINCH TO MOVE',420,222);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(840,183,170,57);hudContext.font='bold 24px monospace';hudContext.fillStyle='#14212a';hudContext.fillText('HOME',925,221);hudTexture.needsUpdate=true;
 }
 const controllers=[renderer.xr.getController(0),renderer.xr.getController(1)];
 const controllerHeld=new Set<THREE.XRTargetRaySpace>();
+const inputSources=new Map<THREE.XRTargetRaySpace,XRInputSource>();
+const handTriggers=new Map(controllers.map(c=>[c,new HandTrigger()]));
+const handSelecting=new Set<THREE.XRTargetRaySpace>();
+const handBlockedUntil=new Map<THREE.XRTargetRaySpace,number>();
+function resetHandTriggers(){for(const trigger of handTriggers.values())trigger.reset();}
+
 const locomotion=new Locomotion(rig,camera,renderer,scene,controllers,xrHud,()=>game.phase==='playing',ray=>game.targets.some(t=>ray.intersectsSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85))));
 for(const controller of controllers){
  rig.add(controller);const gun=makeBlaster();gun.scale.setScalar(.6);gun.position.set(0,-.025,-.04);controller.add(gun);controller.userData.gun=gun;
  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-12)]),new THREE.LineBasicMaterial({color:'#ff9858',transparent:true,opacity:.28}));controller.add(line);controller.userData.line=line;
  const cursor=new THREE.Mesh(new THREE.RingGeometry(.045,.06,24),new THREE.MeshBasicMaterial({color:'#ffb469',transparent:true,opacity:.85,depthWrite:false}));cursor.position.z=-12;controller.add(cursor);controller.userData.cursor=cursor;
- controller.addEventListener('selectstart',()=>{sound.unlock();if(locomotion.selectStart(controller)){drawXRHUD();return;}if(game.phase==='ready'||game.phase==='over'){start();return;}if(game.phase==='paused'){resume();return;}controllerHeld.add(controller);fireFromController(controller)});
- controller.addEventListener('selectend',()=>{controllerHeld.delete(controller);locomotion.selectEnd(controller);drawXRHUD()});controller.addEventListener('disconnected',()=>{controllerHeld.delete(controller);locomotion.cancel(controller)});
+ controller.addEventListener('connected',event=>{inputSources.set(controller,event.data);handTriggers.get(controller)!.reset();});
+ controller.addEventListener('selectstart',event=>{
+  sound.unlock();const hand=!!event.data.hand;
+  if(hand){handSelecting.add(controller);handTriggers.get(controller)!.reset();}
+  if(locomotion.selectStart(controller)){resetHandTriggers();drawXRHUD();return;}
+  if(game.phase==='ready'||game.phase==='over'){start();return;}
+  if(game.phase==='paused'){resume();return;}
+  // A hand without joint permission can still emit select; do not let that
+  // silently restore pinch firing. Only standard controller triggers fire here.
+  if(!hand&&event.data.gamepad?.mapping==='xr-standard'){controllerHeld.add(controller);fireFromController(controller);}
+ });
+ controller.addEventListener('selectend',()=>{
+  controllerHeld.delete(controller);handSelecting.delete(controller);handBlockedUntil.set(controller,performance.now()+150);
+  handTriggers.get(controller)!.reset();locomotion.selectEnd(controller);drawXRHUD();
+ });
+ controller.addEventListener('disconnected',()=>{
+  controllerHeld.delete(controller);handSelecting.delete(controller);handBlockedUntil.delete(controller);
+  inputSources.delete(controller);handTriggers.get(controller)!.reset();locomotion.cancel(controller);
+ });
 }
 function fireFromController(controller:THREE.Object3D){
  if(!controller.visible)return;
@@ -73,7 +97,7 @@ async function checkXR(){
  if(supported){button.classList.replace('secondary','primary');$('play').classList.replace('primary','secondary');$('play').textContent='PLAY IN WINDOW';button.parentElement!.prepend(button);}
  button.innerHTML=supported?'ENTER GALAXY XR <span>◉</span>':'GALAXY XR SETUP <span>◉</span>';
  if(document.body.dataset.emulated==='true')$('xr-note').textContent='GENERIC XR INPUT TEST · not a physical headset';
- else if(supported)$('xr-note').textContent='Point and pinch to play · Galaxy XR / Chrome';
+ else if(supported)$('xr-note').textContent='Thumb up + curl index to fire · pinch to start / move';
  else if(matchMedia('(pointer:coarse)').matches)$('xr-note').textContent='Tap a drone to fire · tap ammo to reload';
 }
 $('xr').onclick=async()=>{
@@ -83,13 +107,13 @@ $('xr').onclick=async()=>{
   await renderer.xr.setSession(session);
  }catch(error){toast('XR could not start. Check headset permissions and use a secure URL.');console.warn('XR session failed',error)}
 };
-renderer.xr.addEventListener('sessionstart',()=>{locomotion.reset();document.body.classList.add('xr');weapon.visible=false;xrHud.visible=true;game.laneWidth=15;rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);renderer.shadowMap.enabled=true;desktopHeld=false;keys.clear();if(game.phase==='playing')game.pause();drawXRHUD();});
-renderer.xr.addEventListener('sessionend',()=>{locomotion.reset();document.body.classList.remove('xr');weapon.visible=true;xrHud.visible=false;renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;controllerHeld.clear();camera.position.set(0,1.7,0);camera.rotation.set(.08,0,0);rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);fitViewport();if(game.phase==='playing')pause();syncUI();checkXR();});
+renderer.xr.addEventListener('sessionstart',()=>{resetHandTriggers();handSelecting.clear();handBlockedUntil.clear();locomotion.reset();document.body.classList.add('xr');weapon.visible=false;xrHud.visible=true;game.laneWidth=15;rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);renderer.shadowMap.enabled=true;desktopHeld=false;keys.clear();if(game.phase==='playing')game.pause();drawXRHUD();});
+renderer.xr.addEventListener('sessionend',()=>{resetHandTriggers();handSelecting.clear();handBlockedUntil.clear();locomotion.reset();document.body.classList.remove('xr');weapon.visible=true;xrHud.visible=false;renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;controllerHeld.clear();camera.position.set(0,1.7,0);camera.rotation.set(.08,0,0);rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);fitViewport();if(game.phase==='playing')pause();syncUI();checkXR();});
 
-function start(){if(!ready)return;locomotion.reset();sound.unlock();sound.tone('start');clearDrones();clearEffects();game.start();recoil=0;keys.clear();desktopHeld=false;controllerHeld.clear();locomotion.goHome();if(!renderer.xr.isPresenting)camera.rotation.x=.08;syncUI();processEvents();}
-function pause(){locomotion.cancel();game.pause();desktopHeld=false;controllerHeld.clear();keys.clear();syncUI()}
-function resume(){game.resume();last=performance.now();syncUI()}
-function back(){locomotion.reset();game.phase='ready';clearDrones();clearEffects();desktopHeld=false;controllerHeld.clear();keys.clear();locomotion.goHome();syncUI()}
+function start(){if(!ready)return;resetHandTriggers();locomotion.reset();sound.unlock();sound.tone('start');clearDrones();clearEffects();game.start();recoil=0;keys.clear();desktopHeld=false;controllerHeld.clear();locomotion.goHome();if(!renderer.xr.isPresenting)camera.rotation.x=.08;syncUI();processEvents();}
+function pause(){resetHandTriggers();locomotion.cancel();game.pause();desktopHeld=false;controllerHeld.clear();keys.clear();syncUI()}
+function resume(){resetHandTriggers();game.resume();last=performance.now();syncUI()}
+function back(){resetHandTriggers();locomotion.reset();game.phase='ready';clearDrones();clearEffects();desktopHeld=false;controllerHeld.clear();keys.clear();locomotion.goHome();syncUI()}
 function syncUI(){
  const playing=game.phase==='playing'||game.phase==='paused';document.body.classList.toggle('playing',playing);
  $('menu').hidden=game.phase!=='ready';$('hud').hidden=!playing;$('pause').hidden=game.phase!=='paused';$('result').hidden=game.phase!=='over';$('footer').hidden=game.phase!=='ready';
@@ -112,7 +136,7 @@ function shootDesktop(){camera.updateWorldMatrix(true,false);raycaster.setFromCa
 function fire(ray:THREE.Ray,source:THREE.Object3D=weapon){
  if(!game.fire())return;recoil=.07;sound.tone('shot');let found:Target|undefined,min=Infinity;let impact=ray.at(45,new THREE.Vector3());
  for(const t of game.targets){const at=ray.intersectSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85),tempV);if(at){const distance=at.distanceTo(ray.origin);if(distance<min){found=t;min=distance;impact=at.clone()}}}
- source.userData.flashUntil=clock+.055;source.userData.flash.visible=true;
+ source.userData.kickUntil=clock+.09;source.userData.flashUntil=clock+.055;source.userData.flash.visible=true;
  const origin=(source.userData.muzzle as THREE.Object3D).getWorldPosition(new THREE.Vector3());
  const beam=new THREE.Line(new THREE.BufferGeometry().setFromPoints([origin,impact]),new THREE.LineBasicMaterial({color:'#ffe6aa',transparent:true,opacity:.9}));scene.add(beam);effects.push({object:beam,life:.065,max:.065});
  if(found){game.hit(found.id);hitUntil=clock+.13;$('hit-marker').style.opacity='1';}
@@ -130,8 +154,22 @@ function processEvents(){for(const event of game.drain()){
  if(event.type==='damage'&&event.target){sound.tone('damage');removeDrone(event.target.id);damageUntil=clock+.4;$('damage-flash').style.opacity=reduced?'0':'.8';toast('Shield lost · shoot the red-charging drones before they breach.')}
  if(event.type==='reload')sound.tone('reload');if(event.type==='over')syncUI();
 }}
-function frame(now:number){const dt=last?Math.min((now-last)/1000,.1):0;last=now;clock+=dt;
+function updateHandTriggers(now:number,xrFrame?:XRFrame){
+ const space=renderer.xr.getReferenceSpace();
+ for(const controller of controllers){
+  const source=inputSources.get(controller),trigger=handTriggers.get(controller)!;
+  if(!xrFrame?.getJointPose||!space||!source?.hand||!controller.visible){trigger.reset();continue;}
+  const blocked=game.phase!=='playing'||xrFrame.session.visibilityState!=='visible'||handSelecting.has(controller)||now<(handBlockedUntil.get(controller)??0)||locomotion.aiming||!!locomotion.pointerTarget(controller);
+  const sample=blocked?null:measureTrigger(name=>{
+   const joint=source.hand!.get(name);if(!joint)return null;
+   return xrFrame.getJointPose!(joint,space)?.transform.position??null;
+  });
+  if(trigger.update(sample,now,blocked))fireFromController(controller);
+ }
+}
+function frame(now:number,xrFrame?:XRFrame){const dt=last?Math.min((now-last)/1000,.1):0;last=now;clock+=dt;
  locomotion.update(dt,keys);
+ updateHandTriggers(now,xrFrame);
  if(game.phase==='playing'){
   game.step(dt);processEvents();
   if(!renderer.xr.isPresenting){if(desktopHeld)shootDesktop();}
@@ -140,14 +178,14 @@ function frame(now:number){const dt=last?Math.min((now-last)/1000,.1):0;last=now
  for(const t of game.targets){const d=drones.get(t.id);if(!d)continue;d.position.set(t.x,t.y,t.z);d.rotation.z=Math.sin(t.age*1.2+t.phase)*.12;for(const rotor of d.userData.rotors as THREE.Mesh[])rotor.rotation.y+=dt*45;const accent=d.userData.accent as THREE.MeshStandardMaterial;accent.emissiveIntensity=t.age>7?1.2+Math.sin(clock*14)*.7:.8;}
  for(let i=0;i<preview.length;i++){preview[i].position.y=3.2+i*.7+(reduced?0:Math.sin(clock*.8+i)*.35);preview[i].rotation.z=Math.sin(clock+i)*.08;for(const rotor of preview[i].userData.rotors as THREE.Mesh[])rotor.rotation.y+=dt*20;}
  for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.life-=dt;if(e.life<=0){scene.remove(e.object);const obj=e.object as THREE.Mesh;if(obj.geometry!==particleGeometry)obj.geometry.dispose();(obj.material as THREE.Material).dispose();effects.splice(i,1);continue;}if(e.velocity){e.object.position.addScaledVector(e.velocity,dt);e.velocity.y-=dt*3;e.object.rotation.x+=dt*4;}(e.object as THREE.Mesh).material instanceof THREE.Material&&((e.object as THREE.Mesh).material as THREE.Material).opacity&&( ((e.object as THREE.Mesh).material as THREE.Material).opacity=Math.min(1,e.life/e.max));}
- for(const gun of [weapon,...controllers.map(c=>c.userData.gun as THREE.Group)])gun.userData.flash.visible=clock<gun.userData.flashUntil;
+ for(const gun of [weapon,...controllers.map(c=>c.userData.gun as THREE.Group)]){gun.userData.flash.visible=clock<gun.userData.flashUntil;if(gun!==weapon)gun.position.z=-.04+Math.max(0,(gun.userData.kickUntil??0)-clock)*.3;}
  recoil=Math.max(0,recoil-dt*.6);weapon.position.z=-.48+recoil;weapon.rotation.x=pointer.y*.2-recoil*1.1;weapon.rotation.y=THREE.MathUtils.damp(weapon.rotation.y,-pointer.x*.3,12,dt);
  if(renderer.xr.isPresenting)for(const controller of controllers){
   if(!controller.visible)continue;controller.updateWorldMatrix(true,false);matrix.identity().extractRotation(controller.matrixWorld);aimRay.origin.setFromMatrixPosition(controller.matrixWorld);aimRay.direction.set(0,0,-1).applyMatrix4(matrix).normalize();let distance=14,aimed=false;
   for(const t of game.targets){const p=aimRay.intersectSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85),tempV);if(p){const d=p.distanceTo(aimRay.origin);if(d<distance){distance=d;aimed=true}}}
   const navigation=locomotion.pointerTarget(controller);if(navigation){distance=navigation.distance;aimed=true;}
   (controller.userData.line as THREE.Line).scale.z=distance/12;
-  const cursor=controller.userData.cursor as THREE.Mesh;cursor.visible=!navigation?.floor;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(aimed?'#fff5d8':'#ffb469');
+  const cursor=controller.userData.cursor as THREE.Mesh;cursor.visible=!navigation?.floor;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(handTriggers.get(controller)!.state==='ready'?'#9cf0cb':aimed?'#fff5d8':'#ffb469');
  }
  if(clock>hitUntil)$('hit-marker').style.opacity='0';if(clock>damageUntil)$('damage-flash').style.opacity='0';
  if(!renderer.xr.isPresenting&&now-domUpdateAt>70){domUpdateAt=now;
@@ -161,6 +199,6 @@ function frame(now:number){const dt=last?Math.min((now-last)/1000,.1):0;last=now
 renderer.setAnimationLoop(frame);
 window.addEventListener('resize',()=>{if(renderer.xr.isPresenting)return;fitViewport();renderer.setSize(innerWidth,innerHeight)});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();toast('Graphics connection lost. Reload the page to restart.');});
-function snapshot(){return {ready,phase:game.phase,score:game.score,shots:game.shots,hits:game.hits,shields:game.shields,ammo:game.ammo,reloading:game.reloadLeft,elapsed:game.elapsed,remaining:game.remaining,xr:renderer.xr.isPresenting,navigation:{position:{x:camera.getWorldPosition(new THREE.Vector3()).x,z:camera.getWorldPosition(new THREE.Vector3()).z},yaw:rig.rotation.y,teleporting:locomotion.aiming,target:locomotion.target},triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,targets:game.targets.map(t=>{const p=new THREE.Vector3(t.x,t.y,t.z).project(camera);return {id:t.id,hp:t.hp,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1}})}}
+function snapshot(){return {ready,phase:game.phase,score:game.score,shots:game.shots,hits:game.hits,shields:game.shields,ammo:game.ammo,reloading:game.reloadLeft,elapsed:game.elapsed,remaining:game.remaining,xr:renderer.xr.isPresenting,handTriggers:controllers.map(c=>({side:inputSources.get(c)?.handedness,state:handTriggers.get(c)!.state})),navigation:{position:{x:camera.getWorldPosition(new THREE.Vector3()).x,z:camera.getWorldPosition(new THREE.Vector3()).z},yaw:rig.rotation.y,teleporting:locomotion.aiming,target:locomotion.target},triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,targets:game.targets.map(t=>{const p=new THREE.Vector3(t.x,t.y,t.z).project(camera);return {id:t.id,hp:t.hp,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1}})}}
 if(import.meta.env.DEV)(window as any).__sfStrike={snapshot,renderer,game,scene};
 syncUI();

@@ -12,6 +12,14 @@
     "elapsed": 60,
     "remaining": 0,
     "xr": false,
+    "handTriggers": [
+      {
+        "state": "untracked"
+      },
+      {
+        "state": "untracked"
+      }
+    ],
     "navigation": {
       "position": {
         "x": 0,
@@ -21,17 +29,9 @@
       "teleporting": false,
       "target": null
     },
-    "triangles": 417293,
-    "drawCalls": 104,
-    "targets": [
-      {
-        "id": 35,
-        "hp": 1,
-        "x": 762.951446797682,
-        "y": 432.3798099822577,
-        "visible": true
-      }
-    ]
+    "triangles": 412417,
+    "drawCalls": 95,
+    "targets": []
   },
   "mobile": "touch hit passed; no overflow",
   "errors": []

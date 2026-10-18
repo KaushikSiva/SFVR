@@ -2,7 +2,7 @@
 
 **Defend the skyline with your hands. Built for Samsung Galaxy XR.**
 
-SFVR is a hand-tracked arcade shooter set in San Francisco's Alamo Square. Stand opposite the Painted Ladies, aim at incoming drones, and pinch to fire. Your head controls the view; your hands control the action.
+SFVR is a hand-tracked arcade shooter set in San Francisco's Alamo Square. Stand opposite the Painted Ladies, aim at incoming drones, and curl your index finger to fire. Your head controls the view; your hands control the action.
 
 **[Play the game](https://kaushiksiva.github.io/SFVR/)** · **[Watch the 60-second demo](https://github.com/KaushikSiva/SFVR/releases/download/v0.2.0/sfvr-demo.mp4)** · [Headset setup](docs/HEADSET.md)
 
@@ -18,7 +18,7 @@ The environment uses full-volume buildings, detailed quadrotors and blasters, te
 
 ## Play on Samsung Galaxy XR
 
-Open the live game in **Chrome on Galaxy XR**, choose **Enter Galaxy XR**, and allow tracking. Point and pinch once to start, then pinch at drones to shoot. Hold the pinch for repeated shots. To move, aim at clear ground, hold a pinch, then release on the orange ring. Red means blocked. Select **HOME** on the headset HUD to return. Controllers support left-stick travel and right-stick 45° turns.
+Open the live game in **Chrome on Galaxy XR**, choose **Enter Galaxy XR**, and allow tracking. Pinch once to start. Make a finger gun: thumb up, index extended, other fingers curled. Aim the ray, then curl your index to shoot. Extend it again for the next shot; a mint aiming ring means ready. Pinching does not shoot. To move, aim at clear ground, hold a pinch, then release on the orange ring. Red means blocked. Select **HOME** on the headset HUD to return. Controllers use their trigger to fire, with left-stick travel and right-stick 45° turns.
 
 For local development, connect the headset by USB, enable USB debugging, and accept the headset's authorization prompt:
 
@@ -47,7 +47,7 @@ For a laptop preview, run `npm run dev` and open **http://127.0.0.1:5186**. Mous
 
 ## Tested, with clear boundaries
 
-The project has run on a physical Galaxy XR, with both tracked hands detected and scored shots observed. Automated checks cover a full round, touch input, reload, pause, replay and simulated stereo hand input. Run `npm test`, `npm run build`, `npm run test:browser`, `npm run test:xr`, and `npm run test:locomotion`.
+The project has run on a physical Galaxy XR with scored shots using the earlier pinch controls, shown in the recorded demo. Finger-trigger controls and locomotion have automated coverage; their physical-headset check is pending. Automated checks cover a full round, touch input, reload, pause, replay and simulated stereo hand input. Run `npm test`, `npm run build`, `npm run test:browser`, `npm run test:xr`, and `npm run test:locomotion`.
 
 Qualcomm involvement is through the headset's Snapdragon hardware and browser rendering. This version has **no QNN or ExecuTorch inference**. The city is an authored approximation; sustained performance and comfort need broader device testing.
 

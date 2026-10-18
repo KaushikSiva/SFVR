@@ -3,7 +3,7 @@
 ## Public demo
 
 Open **https://kaushiksiva.github.io/SFVR/** in Chrome on Samsung Galaxy XR.
-Select **Enter Galaxy XR**, accept tracking permissions, then point and pinch.
+Select **Enter Galaxy XR**, accept tracking permissions, then pinch once to start.
 The HTTPS demo needs no USB cable or running laptop server.
 
 ## Local development
@@ -41,7 +41,8 @@ serial. The automatic reconnection watcher targets Samsung model SM-I610.
 
 ## Controls
 
-- **Hands:** point the ray, pinch to start/fire/replay, hold for repeat fire.
+- **Fire with hands:** make a finger gun with thumb up, index extended, and other fingers curled. Aim the ray; when its ring turns mint, curl your index to shoot once. Extend it again to rearm. Keep thumb and index apart.
+- **Start / replay / resume:** pinch once. Pinching never shoots drones.
 - **Teleport:** during play, point either hand at clear ground. Hold a pinch to choose a destination and release to move. An orange ring means clear; red means blocked. Aim away before releasing to cancel.
 - **Home:** point at **HOME** on the headset HUD and pinch to return to the starting position.
 - **Controllers:** trigger fires or teleports when aimed at ground; the left stick moves relative to your viewing direction, and the right stick turns 45° per deflection. Return the stick to center before turning again.
@@ -59,9 +60,9 @@ the game pauses on exit or when the XR session loses visibility.
 ## Validation
 
 The real SM-I610 has loaded the game, entered immersive mode, exposed both
-tracked hands, and registered successful shots. The generic IWER test rig is
+tracked hands, and registered successful shots with the earlier pinch controls. The generic IWER test rig is
 only for WebXR API/input regression checks, not Samsung hardware emulation.
 
 Official platform documentation: [Android XR for WebXR](https://developer.android.com/develop/xr/web).
 
-Locomotion has automated coverage for hand teleporting, room-scale offsets, blocked destinations, cancellation, Home, stick movement, snap turns and keyboard controls. Physical Galaxy XR movement/comfort validation is still pending.
+Locomotion has automated coverage for hand teleporting, room-scale offsets, blocked destinations, cancellation, Home, stick movement, snap turns and keyboard controls. Finger-trigger detection has unit and WebXR integration coverage for both hands, pinch rejection, one shot per curl, tracking recovery and pause. Physical Galaxy XR validation of finger triggers and movement/comfort is still pending.

@@ -22,9 +22,19 @@
     "shields": 3,
     "ammo": 11,
     "reloading": 0,
-    "elapsed": 0.6329000000059606,
+    "elapsed": 0.8671000000089407,
     "remaining": 60,
     "xr": true,
+    "handTriggers": [
+      {
+        "side": "left",
+        "state": "rest"
+      },
+      {
+        "side": "right",
+        "state": "fired"
+      }
+    ],
     "navigation": {
       "position": {
         "x": 0,
@@ -34,8 +44,8 @@
       "teleporting": false,
       "target": null
     },
-    "triangles": 846342,
-    "drawCalls": 264,
+    "triangles": 846502,
+    "drawCalls": 268,
     "targets": []
   },
   "leftHand": {
@@ -47,9 +57,19 @@
     "shields": 3,
     "ammo": 10,
     "reloading": 0,
-    "elapsed": 2.166100000008941,
+    "elapsed": 2.03320000000298,
     "remaining": 58,
     "xr": true,
+    "handTriggers": [
+      {
+        "side": "left",
+        "state": "fired"
+      },
+      {
+        "side": "right",
+        "state": "fired"
+      }
+    ],
     "navigation": {
       "position": {
         "x": 0,
@@ -59,11 +79,19 @@
       "teleporting": false,
       "target": null
     },
-    "triangles": 846342,
-    "drawCalls": 264,
+    "triangles": 846502,
+    "drawCalls": 268,
     "targets": []
   },
+  "triggerChecks": [
+    "pinch does not fire",
+    "right and left index curls score",
+    "held curl fires once",
+    "tracking recovery requires extension",
+    "resume requires extension"
+  ],
   "replay": "pinch restarted after three breaches",
+  "controller": "physical-controller input path retains trigger firing",
   "exit": "XR exit pauses; desktop resume works",
   "errors": []
 }
