@@ -29,7 +29,17 @@ export function installTestRuntime(){
   const middle=joints[`middle-finger-${part}`].offsetMatrix;
   for(let i=12;i<15;i++)index[i]=indexBase[i]+middle[i]-middleBase[i];
  }
- for(const hand of Object.values(device.hands))if(hand)hand[P_HAND_INPUT].poses.trigger=triggerPose;
+ const twoFingerPose=structuredClone(pointHandPose);
+ const twoJoints=twoFingerPose.jointTransforms;
+ for(const part of ['phalanx-intermediate','phalanx-distal','tip'] as const){
+  const middle=twoJoints[`middle-finger-${part}`].offsetMatrix;
+  const index=twoJoints[`index-finger-${part}`].offsetMatrix;
+  for(let i=12;i<15;i++)middle[i]=middleBase[i]+index[i]-indexBase[i];
+ }
+ for(const hand of Object.values(device.hands))if(hand){
+  hand[P_HAND_INPUT].poses.trigger=triggerPose;
+  hand[P_HAND_INPUT].poses.twoFinger=twoFingerPose;
+ }
  device.primaryInputMode='hand';device.installRuntime({forceInstall:true});
  (window as any).__xrEmulator=device;
  document.body.dataset.emulated='true';

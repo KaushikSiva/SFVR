@@ -6,7 +6,7 @@ Content plan: full-canvas SF environment and one start action; a minimal score/t
 
 Interaction thesis: a short title-to-arena transition, responsive shot/recoil and hit particles, and a clear combo/round-result reveal. Use explicit point-and-release teleporting, viewer-relative stick movement and discrete snap turns; reduce decorative motion when requested.
 
-Game: 60-second drone-defense rounds in a bounded park arena. Mouse/touch aim and fire on desktop/mobile. WebXR joint tracking detects an extended-to-curled index finger with a raised thumb and curled remaining fingers. Each deliberate curl fires once; pinch is reserved for selection and teleporting. Controllers retain trigger firing. Three shield charges, rechargeable magazine and increasing spawn pressure. No artificial camera shake in XR.
+Game: 60-second drone-defense rounds in a bounded park arena. Mouse/touch aim and fire on desktop/mobile. WebXR joint tracking detects extended index and middle fingers with the remaining fingers curled, firing while held. Native pinch input also fires while held. Navigation and menu selections take priority over firing. The earlier index-curl trigger remains available for single shots. Controllers retain trigger firing. Three shield charges, rechargeable magazine and increasing spawn pressure. No artificial camera shake in XR.
 
 The environment reuses the user's CORTEX authored Painted Ladies and DataSF context, with a new simplified park and arcade gameplay. It is an artistic approximation. The original CORTEX app remains independently runnable.
 

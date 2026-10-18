@@ -51,8 +51,8 @@ xrHud.name='XR status and movement';xrHud.position.set(0,-.39,-1.45);xrHud.rende
 let hudLast='',hudTime=0,domUpdateAt=0;
 function drawXRHUD(){
  const message=locomotion.aiming?'RELEASE PINCH TO MOVE':game.phase==='ready'?'POINT + PINCH TO START':game.phase==='over'?'ROUND OVER · SELECT TO PLAY AGAIN':game.phase==='paused'?'PAUSED · SELECT TO RESUME':`SCORE ${String(game.score).padStart(5,'0')}    ${game.remaining}s    SHIELDS ${game.shields}`;
- const detail=locomotion.aiming?(locomotion.valid?'CLEAR DESTINATION':'CHOOSE CLEAR GROUND INSIDE THE PARK'):game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:([...handTriggers.values()].some(t=>t.state==='ready')?'TRIGGER READY · CURL INDEX':'THUMB UP · EXTEND INDEX')}`):'SFVR / ALAMO SQUARE';
- const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,167);hudContext.font='22px monospace';hudContext.fillStyle='#dedbd0';hudContext.fillText('CURL INDEX TO FIRE · PINCH TO MOVE',420,222);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(840,183,170,57);hudContext.font='bold 24px monospace';hudContext.fillStyle='#14212a';hudContext.fillText('HOME',925,221);hudTexture.needsUpdate=true;
+ const detail=locomotion.aiming?(locomotion.valid?'CLEAR DESTINATION':'CHOOSE CLEAR GROUND INSIDE THE PARK'):game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:([...handTriggers.values()].some(t=>t.state==='firing')?'TWO-FINGER BURST':'2 FINGERS OR PINCH TO FIRE')}`):'SFVR / ALAMO SQUARE';
+ const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,167);hudContext.font='22px monospace';hudContext.fillStyle='#dedbd0';hudContext.fillText('AIM LOW + PINCH TO TELEPORT',420,222);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(840,183,170,57);hudContext.font='bold 24px monospace';hudContext.fillStyle='#14212a';hudContext.fillText('HOME',925,221);hudTexture.needsUpdate=true;
 }
 const controllers=[renderer.xr.getController(0),renderer.xr.getController(1)];
 const controllerHeld=new Set<THREE.XRTargetRaySpace>();
@@ -69,14 +69,13 @@ for(const controller of controllers){
  const cursor=new THREE.Mesh(new THREE.RingGeometry(.045,.06,24),new THREE.MeshBasicMaterial({color:'#ffb469',transparent:true,opacity:.85,depthWrite:false}));cursor.position.z=-12;controller.add(cursor);controller.userData.cursor=cursor;
  controller.addEventListener('connected',event=>{inputSources.set(controller,event.data);handTriggers.get(controller)!.reset();});
  controller.addEventListener('selectstart',event=>{
-  sound.unlock();const hand=!!event.data.hand;
-  if(hand){handSelecting.add(controller);handTriggers.get(controller)!.reset();}
-  if(locomotion.selectStart(controller)){resetHandTriggers();drawXRHUD();return;}
+  sound.unlock();const hand=!!event.data.hand||event.data.profiles.some(profile=>profile.includes('hand'));
+  if(hand){handSelecting.add(controller);handTriggers.get(controller)!.release();}
+  if(locomotion.selectStart(controller)){controllerHeld.clear();resetHandTriggers();drawXRHUD();return;}
   if(game.phase==='ready'||game.phase==='over'){start();return;}
   if(game.phase==='paused'){resume();return;}
-  // A hand without joint permission can still emit select; do not let that
-  // silently restore pinch firing. Only standard controller triggers fire here.
-  if(!hand&&event.data.gamepad?.mapping==='xr-standard'){controllerHeld.add(controller);fireFromController(controller);}
+  // Navigation and round controls consume the selection before shooting.
+  if(hand||event.data.gamepad?.mapping==='xr-standard'){controllerHeld.add(controller);fireFromController(controller);}
  });
  controller.addEventListener('selectend',()=>{
   controllerHeld.delete(controller);handSelecting.delete(controller);handBlockedUntil.set(controller,performance.now()+150);
@@ -97,7 +96,7 @@ async function checkXR(){
  if(supported){button.classList.replace('secondary','primary');$('play').classList.replace('primary','secondary');$('play').textContent='PLAY IN WINDOW';button.parentElement!.prepend(button);}
  button.innerHTML=supported?'ENTER GALAXY XR <span>◉</span>':'GALAXY XR SETUP <span>◉</span>';
  if(document.body.dataset.emulated==='true')$('xr-note').textContent='GENERIC XR INPUT TEST · not a physical headset';
- else if(supported)$('xr-note').textContent='Thumb up + curl index to fire · pinch to start / move';
+ else if(supported)$('xr-note').textContent='Extend index + middle or pinch to fire · aim low + pinch to move';
  else if(matchMedia('(pointer:coarse)').matches)$('xr-note').textContent='Tap a drone to fire · tap ammo to reload';
 }
 $('xr').onclick=async()=>{
@@ -173,7 +172,11 @@ function frame(now:number,xrFrame?:XRFrame){const dt=last?Math.min((now-last)/10
  if(game.phase==='playing'){
   game.step(dt);processEvents();
   if(!renderer.xr.isPresenting){if(desktopHeld)shootDesktop();}
-  else for(const controller of controllerHeld)fireFromController(controller);
+  else for(const controller of controllerHeld){
+   // End a held burst on tracking loss or when its ray enters navigation.
+   if(!controller.visible||locomotion.aiming||locomotion.pointerTarget(controller)){controllerHeld.delete(controller);continue;}
+   fireFromController(controller);
+  }
  }
  for(const t of game.targets){const d=drones.get(t.id);if(!d)continue;d.position.set(t.x,t.y,t.z);d.rotation.z=Math.sin(t.age*1.2+t.phase)*.12;for(const rotor of d.userData.rotors as THREE.Mesh[])rotor.rotation.y+=dt*45;const accent=d.userData.accent as THREE.MeshStandardMaterial;accent.emissiveIntensity=t.age>7?1.2+Math.sin(clock*14)*.7:.8;}
  for(let i=0;i<preview.length;i++){preview[i].position.y=3.2+i*.7+(reduced?0:Math.sin(clock*.8+i)*.35);preview[i].rotation.z=Math.sin(clock+i)*.08;for(const rotor of preview[i].userData.rotors as THREE.Mesh[])rotor.rotation.y+=dt*20;}
@@ -185,7 +188,7 @@ function frame(now:number,xrFrame?:XRFrame){const dt=last?Math.min((now-last)/10
   for(const t of game.targets){const p=aimRay.intersectSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85),tempV);if(p){const d=p.distanceTo(aimRay.origin);if(d<distance){distance=d;aimed=true}}}
   const navigation=locomotion.pointerTarget(controller);if(navigation){distance=navigation.distance;aimed=true;}
   (controller.userData.line as THREE.Line).scale.z=distance/12;
-  const cursor=controller.userData.cursor as THREE.Mesh;cursor.visible=!navigation?.floor;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(handTriggers.get(controller)!.state==='ready'?'#9cf0cb':aimed?'#fff5d8':'#ffb469');
+  const cursor=controller.userData.cursor as THREE.Mesh;cursor.visible=!navigation?.floor;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(['ready','firing'].includes(handTriggers.get(controller)!.state)?'#9cf0cb':aimed?'#fff5d8':'#ffb469');
  }
  if(clock>hitUntil)$('hit-marker').style.opacity='0';if(clock>damageUntil)$('damage-flash').style.opacity='0';
  if(!renderer.xr.isPresenting&&now-domUpdateAt>70){domUpdateAt=now;

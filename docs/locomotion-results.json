@@ -6,6 +6,7 @@
   "trackingLoss": "disconnect cancels the armed teleport without moving",
   "pause": "pause cancels teleport",
   "home": "HUD HOME returns the tracked viewer to the start",
+  "gestureNavigation": "two-finger pose on ground or HOME never fires or teleports",
   "controller": "left-stick movement; one 45° turn per right-stick deflection, around the viewer",
   "desktop": "W moves forward; H resets; pause stops movement",
   "errors": []

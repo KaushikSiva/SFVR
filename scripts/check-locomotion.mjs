@@ -25,6 +25,14 @@ try{
  // HOME is a real ray-selected HUD button, not a test hook.
  const home=await p.evaluate(()=>{const hud=window.__sfStrike.scene.getObjectByName('XR status and movement');return hud.localToWorld(hud.position.clone().set(.395, -.075,0)).toArray()});
  await aim(home);await pinch(1);await pinch(0);s=await state();assert.ok(Math.abs(s.navigation.position.x)<.04);assert.ok(Math.abs(s.navigation.position.z-6.5)<.04);results.home='HUD HOME returns the tracked viewer to the start';
+ // Two-finger fire must not activate on a navigation target either.
+ const beforeTwoFinger=(await state()).shots;await aim([2,0,3]);
+ await p.evaluate(()=>window.__xrEmulator.hands.right.poseId='twoFinger');await p.waitForTimeout(350);
+ assert.equal((await state()).shots,beforeTwoFinger);assert.equal((await state()).navigation.teleporting,false);
+ const homeAfterReset=await p.evaluate(()=>{const hud=window.__sfStrike.scene.getObjectByName('XR status and movement');return hud.localToWorld(hud.position.clone().set(.395,-.075,0)).toArray()});
+ await aim(homeAfterReset);await p.waitForTimeout(220);assert.equal((await state()).shots,beforeTwoFinger);
+ await p.evaluate(()=>window.__xrEmulator.hands.right.poseId='default');await p.waitForTimeout(90);
+ results.gestureNavigation='two-finger pose on ground or HOME never fires or teleports';
  // Swap to generic standard controllers to verify sticks and snap-turn latching.
  await p.evaluate(()=>window.__xrEmulator.primaryInputMode='controller');await p.waitForTimeout(200);
  await p.evaluate(()=>window.__xrEmulator.controllers.left.updateAxis('thumbstick','y-axis',-1));await p.waitForTimeout(450);await p.evaluate(()=>window.__xrEmulator.controllers.left.updateAxis('thumbstick','y-axis',0));

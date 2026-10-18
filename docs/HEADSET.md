@@ -41,8 +41,8 @@ serial. The automatic reconnection watcher targets Samsung model SM-I610.
 
 ## Controls
 
-- **Fire with hands:** make a finger gun with thumb up, index extended, and other fingers curled. Aim the ray; when its ring turns mint, curl your index to shoot once. Extend it again to rearm. Keep thumb and index apart.
-- **Start / replay / resume:** pinch once. Pinching never shoots drones.
+- **Fire with hands:** aim at drones and extend your index and middle fingers, with ring and little fingers curled. Hold this pose for repeated shots; fold the fingers to stop. A mint ring shows two-finger firing. **Pinch-to-fire also works:** hold a pinch for a burst, release to stop. The earlier single-index curl gesture still fires one shot.
+- **Start / replay / resume:** pinch once. That selection does not also fire a shot.
 - **Teleport:** during play, point either hand at clear ground. Hold a pinch to choose a destination and release to move. An orange ring means clear; red means blocked. Aim away before releasing to cancel.
 - **Home:** point at **HOME** on the headset HUD and pinch to return to the starting position.
 - **Controllers:** trigger fires or teleports when aimed at ground; the left stick moves relative to your viewing direction, and the right stick turns 45° per deflection. Return the stick to center before turning again.
@@ -65,4 +65,4 @@ only for WebXR API/input regression checks, not Samsung hardware emulation.
 
 Official platform documentation: [Android XR for WebXR](https://developer.android.com/develop/xr/web).
 
-Locomotion has automated coverage for hand teleporting, room-scale offsets, blocked destinations, cancellation, Home, stick movement, snap turns and keyboard controls. Finger-trigger detection has unit and WebXR integration coverage for both hands, pinch rejection, one shot per curl, tracking recovery and pause. Physical Galaxy XR validation of finger triggers and movement/comfort is still pending.
+Locomotion has automated coverage for hand teleporting, room-scale offsets, blocked destinations, cancellation, Home, stick movement, snap turns and keyboard controls. Hand firing has unit and WebXR integration coverage for both hands, two-finger bursts, pinch bursts, release-to-stop, tracking recovery, navigation and pause. Physical Galaxy XR validation of the new two-finger gesture and movement/comfort is still pending.

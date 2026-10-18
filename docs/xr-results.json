@@ -13,16 +13,16 @@
       "mode": "tracked-pointer"
     }
   ],
-  "rightHand": {
+  "rightTwoFinger": {
     "ready": true,
     "phase": "playing",
     "score": 100,
-    "shots": 1,
+    "shots": 3,
     "hits": 1,
     "shields": 3,
-    "ammo": 11,
+    "ammo": 9,
     "reloading": 0,
-    "elapsed": 0.8671000000089407,
+    "elapsed": 0.8335,
     "remaining": 60,
     "xr": true,
     "handTriggers": [
@@ -32,7 +32,7 @@
       },
       {
         "side": "right",
-        "state": "fired"
+        "state": "firing"
       }
     ],
     "navigation": {
@@ -48,26 +48,26 @@
     "drawCalls": 268,
     "targets": []
   },
-  "leftHand": {
+  "leftTwoFinger": {
     "ready": true,
     "phase": "playing",
     "score": 600,
-    "shots": 2,
+    "shots": 5,
     "hits": 2,
     "shields": 3,
-    "ammo": 10,
+    "ammo": 7,
     "reloading": 0,
-    "elapsed": 2.03320000000298,
+    "elapsed": 2.5000000000000013,
     "remaining": 58,
     "xr": true,
     "handTriggers": [
       {
         "side": "left",
-        "state": "fired"
+        "state": "firing"
       },
       {
         "side": "right",
-        "state": "fired"
+        "state": "rest"
       }
     ],
     "navigation": {
@@ -79,16 +79,87 @@
       "teleporting": false,
       "target": null
     },
-    "triangles": 846502,
-    "drawCalls": 268,
+    "triangles": 846342,
+    "drawCalls": 264,
+    "targets": []
+  },
+  "rightPinch": {
+    "ready": true,
+    "phase": "playing",
+    "score": 900,
+    "shots": 8,
+    "hits": 3,
+    "shields": 3,
+    "ammo": 4,
+    "reloading": 0,
+    "elapsed": 4.983200000002986,
+    "remaining": 56,
+    "xr": true,
+    "handTriggers": [
+      {
+        "side": "left",
+        "state": "rest"
+      },
+      {
+        "side": "right",
+        "state": "blocked"
+      }
+    ],
+    "navigation": {
+      "position": {
+        "x": 0,
+        "z": 6.5
+      },
+      "yaw": 0,
+      "teleporting": false,
+      "target": null
+    },
+    "triangles": 846318,
+    "drawCalls": 262,
+    "targets": []
+  },
+  "leftPinch": {
+    "ready": true,
+    "phase": "playing",
+    "score": 1300,
+    "shots": 11,
+    "hits": 4,
+    "shields": 3,
+    "ammo": 1,
+    "reloading": 0,
+    "elapsed": 7.483200000002989,
+    "remaining": 53,
+    "xr": true,
+    "handTriggers": [
+      {
+        "side": "left",
+        "state": "blocked"
+      },
+      {
+        "side": "right",
+        "state": "rest"
+      }
+    ],
+    "navigation": {
+      "position": {
+        "x": 0,
+        "z": 6.5
+      },
+      "yaw": 0,
+      "teleporting": false,
+      "target": null
+    },
+    "triangles": 846358,
+    "drawCalls": 254,
     "targets": []
   },
   "triggerChecks": [
-    "pinch does not fire",
-    "right and left index curls score",
-    "held curl fires once",
-    "tracking recovery requires extension",
-    "resume requires extension"
+    "both hands hit with two-finger bursts",
+    "both hands hit with pinch bursts",
+    "release stops either burst",
+    "tracking recovery requires gesture release",
+    "resume requires gesture release",
+    "single-index curl still works"
   ],
   "replay": "pinch restarted after three breaches",
   "controller": "physical-controller input path retains trigger firing",

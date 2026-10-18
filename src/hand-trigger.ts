@@ -19,20 +19,38 @@ export function measureTrigger(joint:(name:XRHandJoint)=>Point|null):TriggerSamp
  return Object.values(sample).every(Number.isFinite)?sample:null;
 }
 
-/** One shot per deliberate index extension → curl. A pinch is never a trigger. */
+/** Two extended fingers hold fire; the earlier index-curl trigger also works.
+ * Native pinch/select events are handled separately by the input router. */
 export class HandTrigger {
- state:'untracked'|'blocked'|'ready'|'fired'|'rest'='untracked';
+ state:'untracked'|'blocked'|'ready'|'fired'|'firing'|'rest'='untracked';
  private armed=false;
  private openSince?:number;
  private closedSince?:number;
  private last?:number;
+ private twoFingerSince?:number;
+ private twoFingerNeedsRelease=false;
  reset(state:HandTrigger['state']='untracked'){
+  // An interrupted burst must not restart on tracking recovery or navigation exit.
+  if(this.twoFingerSince!==undefined)this.twoFingerNeedsRelease=true;
+  this.twoFingerSince=undefined;
   this.armed=false;this.openSince=undefined;this.closedSince=undefined;this.last=undefined;this.state=state;
  }
+ /** A deliberate pinch also releases the two-finger pose. */
+ release(){this.reset('rest');this.twoFingerNeedsRelease=false;}
  update(sample:TriggerSample|null,now:number,blocked=false){
   if(!sample||blocked){this.reset(blocked?'blocked':'untracked');return false;}
   if(this.last!==undefined&&(now-this.last>120||now<this.last))this.reset();
   this.last=now;
+  const extended=this.state==='firing'?.82:.90;
+  if(sample.index>=extended&&sample.middle>=extended&&sample.ring<.85&&sample.thumbGap>=.38){
+   this.armed=false;this.openSince=undefined;this.closedSince=undefined;
+   if(this.twoFingerNeedsRelease){this.state='rest';return false;}
+   this.twoFingerSince??=now;
+   if(now-this.twoFingerSince>=120){this.state='firing';return true;}
+   this.state='rest';return false;
+  }
+  this.twoFingerSince=undefined;this.twoFingerNeedsRelease=false;
+  if(this.state==='firing')this.state='rest';
   // Keep the thumb away from the index and grip with the other fingers.
   if(sample.thumbGap<.38||sample.middle>.85||sample.ring>.85){this.reset('rest');return false;}
   if(sample.index>=.90){

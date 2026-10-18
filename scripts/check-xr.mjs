@@ -21,6 +21,8 @@ try{
   await page.waitForTimeout(180);
  };
  const aim=async(side='right')=>{
+  // Wait for the newly spawned drone's first motion update before aiming.
+  await page.waitForFunction(()=>window.__sfStrike.game.targets[0]?.age>.12&&window.__sfStrike.game.reloadLeft===0);
   // Read the target position, then orient the emulated input device. Scoring
   // still goes through WebXR joint poses and the production ray intersection.
   await page.evaluate(s=>{
@@ -34,31 +36,53 @@ try{
  results.inputs=await page.evaluate(()=>[...window.__sfStrike.renderer.xr.getSession().inputSources].map(s=>({hand:!!s.hand,side:s.handedness,mode:s.targetRayMode})));
  assert.equal(results.inputs.length,2);assert.ok(results.inputs.every(s=>s.hand));
  await pinch();assert.equal((await state()).phase,'playing');
- // Pinching at a drone now selects only; it must not shoot.
- await aim();await pinch();assert.equal((await state()).shots,0,'pinch must not fire');
+ assert.equal((await state()).shots,0,'starting a round must not also fire');
  const pose=async(side,id)=>page.evaluate(({side,id})=>{window.__xrEmulator.hands[side].poseId=id;},{side,id});
- const trigger=async(side='right')=>{
-  await pose(side,'point');
-  await page.waitForFunction(s=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side===s&&h.state==='ready'),side);
-  await aim(side);await pose(side,'trigger');
-  await page.waitForFunction(s=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side===s&&h.state==='fired'),side);
- };
- await trigger();assert.ok((await state()).score>=100,'right-hand index curl must score');
- results.rightHand=await state();
- await page.waitForTimeout(450);assert.equal((await state()).shots,1,'holding a curl must not repeat fire');
- await page.waitForFunction(()=>window.__sfStrike.game.targets.length>0);
- await trigger('left');assert.ok((await state()).hits>=2,'left-hand index curl must score');
- results.leftHand=await state();
- // A hand reappearing curled must not discharge a previously armed trigger.
- await pose('right','point');await page.waitForTimeout(150);
+ const readyTarget=async()=>page.waitForFunction(()=>window.__sfStrike.game.targets.length>0);
+ for(const side of ['right','left']){
+  await readyTarget();await aim(side);const before=await state();
+  await pose(side,'twoFinger');
+  await page.waitForFunction(s=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side===s&&h.state==='firing'),side);
+  await page.waitForTimeout(320);let current=await state();
+  assert.ok(current.hits>before.hits,side+' two-finger pose must hit a drone');
+  assert.ok(current.shots>=before.shots+2,'holding two fingers must repeat fire');
+  results[side+'TwoFinger']=current;
+  await pose(side,'default');await page.waitForTimeout(80);const stopped=(await state()).shots;
+  await page.waitForTimeout(250);assert.equal((await state()).shots,stopped,'folding fingers must stop firing');
+ }
+ // Either hand also supports native pinch-to-fire and release-to-stop.
+ for(const side of ['right','left']){
+  await readyTarget();await aim(side);const before=await state();
+  await page.evaluate(s=>window.__xrEmulator.hands[s].updatePinchValue(1),side);
+  await page.waitForTimeout(380);const current=await state();
+  assert.ok(current.hits>before.hits,side+' pinch must hit a drone: '+JSON.stringify({before,current}));
+  assert.ok(current.shots>=before.shots+2,'holding a pinch must repeat fire');
+  await page.evaluate(s=>window.__xrEmulator.hands[s].updatePinchValue(0),side);
+  await page.waitForTimeout(80);const stopped=(await state()).shots;
+  await page.waitForTimeout(250);assert.equal((await state()).shots,stopped,'releasing pinch must stop firing');
+  results[side+'Pinch']=current;
+ }
+ // An interrupted two-finger burst cannot restart just because a hand reappears.
+ await readyTarget();await aim();await pose('right','twoFinger');
+ await page.waitForFunction(()=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side==='right'&&h.state==='firing'));
  await page.evaluate(()=>window.__xrEmulator.hands.right.connected=false);await page.waitForTimeout(90);
- await pose('right','trigger');await page.evaluate(()=>window.__xrEmulator.hands.right.connected=true);
- await page.waitForTimeout(220);assert.equal((await state()).shots,2,'tracking recovery must not fire');
- // Navigation, menu selection and pause also clear the trigger latch.
- await pose('left','point');await page.waitForTimeout(150);await page.keyboard.press('Escape');
- assert.equal((await state()).phase,'paused');await pose('left','trigger');await pinch();
- assert.equal((await state()).phase,'playing');assert.equal((await state()).shots,2,'resuming with a curl must not fire');
- results.triggerChecks=['pinch does not fire','right and left index curls score','held curl fires once','tracking recovery requires extension','resume requires extension'];
+ const stopped=(await state()).shots;
+ await page.evaluate(()=>window.__xrEmulator.hands.right.connected=true);
+ await page.waitForTimeout(300);assert.equal((await state()).shots,stopped,'tracking recovery must require gesture release');
+ await pose('right','default');await page.waitForTimeout(90);
+ await pose('right','twoFinger');await page.waitForFunction(()=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side==='right'&&h.state==='firing'));
+ await page.keyboard.press('Escape');const pausedShots=(await state()).shots;
+ assert.equal((await state()).phase,'paused');await page.keyboard.press('Escape');
+ await page.waitForTimeout(300);assert.equal((await state()).shots,pausedShots,'resume must require gesture release');
+ await pose('right','default');await page.waitForTimeout(100);
+ // Preserve the earlier single-index curl option.
+ await readyTarget();await aim();const beforeCurl=await state();await pose('right','point');
+ await page.waitForFunction(()=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side==='right'&&h.state==='ready'));
+ await pose('right','trigger');await page.waitForFunction(()=>window.__sfStrike.snapshot().handTriggers.some(h=>h.side==='right'&&h.state==='fired'));
+ assert.equal((await state()).shots,beforeCurl.shots+1);await page.waitForTimeout(250);
+ assert.equal((await state()).shots,beforeCurl.shots+1,'single-index curl stays one shot');
+ await pose('right','default');
+ results.triggerChecks=['both hands hit with two-finger bursts','both hands hit with pinch bursts','release stops either burst','tracking recovery requires gesture release','resume requires gesture release','single-index curl still works'];
  await page.screenshot({path:'docs/screenshots/xr-stereo.png'});
  // Let the real clock and drones breach; restart using only a pinch.
  await page.waitForFunction(()=>window.__sfStrike.snapshot().phase==='over',null,{timeout:40000}).catch(async error=>{throw new Error(error.message+' State: '+JSON.stringify(await state()));});
