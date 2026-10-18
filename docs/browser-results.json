@@ -1,0 +1,21 @@
+{
+  "firstHit": 100,
+  "fullRound": {
+    "ready": true,
+    "phase": "over",
+    "score": 23000,
+    "shots": 43,
+    "hits": 43,
+    "shields": 3,
+    "ammo": 6,
+    "reloading": 0,
+    "elapsed": 60,
+    "remaining": 0,
+    "xr": false,
+    "triangles": 412657,
+    "drawCalls": 115,
+    "targets": []
+  },
+  "mobile": "touch hit passed; no overflow",
+  "errors": []
+}

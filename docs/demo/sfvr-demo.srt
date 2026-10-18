@@ -1,0 +1,105 @@
+1
+00:00:00,058 --> 00:00:03,773
+This is SFVR, a shooting game built for
+Samsung
+
+2
+00:00:03,773 --> 00:00:04,938
+Galaxy XR.
+
+3
+00:00:05,132 --> 00:00:08,394
+Step into San Francisco's Alamo Square,
+surrounded
+
+4
+00:00:08,394 --> 00:00:11,587
+by the Painted Ladies, a detailed park, and
+incoming
+
+5
+00:00:11,587 --> 00:00:12,287
+drones.
+
+6
+00:00:12,539 --> 00:00:15,108
+In the headset, your hands become the
+controls.
+
+7
+00:00:15,360 --> 00:00:18,529
+Point to aim, pinch to fire, and hold your
+pinch
+
+8
+00:00:18,529 --> 00:00:19,369
+for a burst.
+
+9
+00:00:19,737 --> 00:00:21,784
+No handheld controller is required.
+
+10
+00:00:22,094 --> 00:00:24,292
+You have sixty seconds and three shields.
+
+11
+00:00:24,601 --> 00:00:26,498
+Clear targets before they break through.
+
+12
+00:00:26,958 --> 00:00:30,197
+Gold drones reward precision, armored drones
+
+13
+00:00:30,197 --> 00:00:33,417
+take two hits, and quick eliminations build
+your combo.
+
+14
+00:00:33,669 --> 00:00:37,094
+Textured surfaces, directional shadows, and
+detailed
+
+15
+00:00:37,094 --> 00:00:40,286
+three-dimensional equipment give the arena
+depth as you move your
+
+16
+00:00:40,286 --> 00:00:40,801
+head.
+
+17
+00:00:41,111 --> 00:00:44,698
+The game runs locally in Chrome on Galaxy XR,
+using
+
+18
+00:00:44,698 --> 00:00:46,687
+its Qualcomm Snapdragon hardware.
+
+19
+00:00:46,997 --> 00:00:50,189
+This version uses WebXR rendering, with no AI
+
+20
+00:00:50,189 --> 00:00:51,134
+inference claimed.
+
+21
+00:00:51,443 --> 00:00:54,659
+Connect the headset, open the game, and select
+Enter
+
+22
+00:00:54,659 --> 00:00:55,824
+Galaxy XR.
+
+23
+00:00:56,018 --> 00:00:57,357
+SFVR.
+
+24
+00:00:57,550 --> 00:00:59,481
+Defend the skyline with your hands.

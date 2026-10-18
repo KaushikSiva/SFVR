@@ -1,0 +1,8 @@
+This is S F V R, a shooting game built for Samsung Galaxy XR.
+Step into San Francisco's Alamo Square, surrounded by the Painted Ladies, a detailed park, and incoming drones.
+In the headset, your hands become the controls. Point to aim, pinch to fire, and hold your pinch for a burst. No handheld controller is required.
+You have sixty seconds and three shields. Clear targets before they break through. Gold drones reward precision, armored drones take two hits, and quick eliminations build your combo.
+Textured surfaces, directional shadows, and detailed three-dimensional equipment give the arena depth as you move your head.
+The game runs locally in Chrome on Galaxy XR, using its Qualcomm Snapdragon hardware. This version uses WebXR rendering, with no AI inference claimed.
+Connect the headset, open the game, and select Enter Galaxy XR.
+S F V R. Defend the skyline with your hands.

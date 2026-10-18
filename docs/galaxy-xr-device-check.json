@@ -1,0 +1,39 @@
+{
+  "device": "Samsung Galaxy XR (SM-I610)",
+  "firmware": "UML2.260301.001.I610UEU2AZF3",
+  "transport": "USB / ADB reverse, port 5186",
+  "url": "http://localhost:5186",
+  "secureContext": true,
+  "immersiveVRSupported": true,
+  "immersiveSessionActive": true,
+  "emulatedRuntimePresent": false,
+  "hands": [
+    "left",
+    "right"
+  ],
+  "inputMode": "tracked-pointer",
+  "inputProfiles": [
+    "generic-hand-select-grasp",
+    "generic-hand-select",
+    "generic-hand",
+    "generic-trigger-squeeze"
+  ],
+  "observedScore": 100,
+  "observedHits": 1,
+  "shortFrameSample": {
+    "intervals": 19,
+    "meanFPS": 47.16981132074926,
+    "worstFrameMs": 27.9,
+    "renderBuffer": [
+      3155,
+      1835
+    ],
+    "limitation": "A brief live sample, not a sustained performance or comfort benchmark."
+  },
+  "remainingValidation": [
+    "full round on physical headset",
+    "tracking loss/recovery",
+    "sustained frame pacing and comfort"
+  ],
+  "scope": "Physical input validation from the earlier visual build. The upgraded materials and geometry need a new sustained headset benchmark."
+}

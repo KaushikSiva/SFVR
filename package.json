@@ -1,0 +1,29 @@
+{
+  "name": "sfvr",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5186",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 5186",
+    "test": "tsx --test tests/*.test.ts",
+    "test:browser": "node scripts/check-browser.mjs",
+    "test:xr": "node scripts/check-xr.mjs",
+    "headset": "node scripts/galaxy-xr.mjs",
+    "headset:watch": "node scripts/watch-headset.mjs",
+    "play:xr": "node scripts/start-headset.mjs"
+  },
+  "dependencies": {
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/three": "0.185.0",
+    "@types/webxr": "0.5.22",
+    "iwer": "^2.6.0",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vite": "8.2.2"
+  }
+}
