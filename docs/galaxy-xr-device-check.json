@@ -35,5 +35,36 @@
     "tracking loss/recovery",
     "sustained frame pacing and comfort"
   ],
-  "scope": "Physical input validation from the earlier visual build. The upgraded materials and geometry need a new sustained headset benchmark."
+  "scope": "Original physical input check, plus upgraded SFVR validation below. The original frame sample is retained with its own buffer resolution.",
+  "upgradedSFVR": {
+    "physicalDevice": true,
+    "emulatedRuntimePresent": false,
+    "immersiveSessionActive": true,
+    "hands": [
+      {
+        "side": "right",
+        "hand": true,
+        "mode": "tracked-pointer"
+      },
+      {
+        "side": "left",
+        "hand": true,
+        "mode": "tracked-pointer"
+      }
+    ],
+    "observedScore": 2950,
+    "observedHits": 10,
+    "shortFrameSample": {
+      "intervals": 60,
+      "meanFPS": 49.09180166911377,
+      "worstFrameMs": 41.6999999997206,
+      "renderBuffer": [
+        2412,
+        1403
+      ],
+      "limitation": "Brief sample during ADB video recording; not a sustained benchmark or comfort guarantee."
+    },
+    "footage": "docs/demo/galaxy-xr-clip.mp4",
+    "footageShows": "Both hand-controlled blasters, tracked head movement, shots and increasing score."
+  }
 }

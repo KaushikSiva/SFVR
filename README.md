@@ -14,7 +14,7 @@ Survive a complete round before the drones breach the park. Gold targets give bo
 
 The environment uses full-volume buildings, detailed quadrotors and blasters, textured surfaces, an HDR sky, cached shadows, and vegetation. Lean or look around in XR to see the scene's depth. The headset camera follows physical movement without artificial locomotion or camera shake.
 
-![The SFVR arena during a round](docs/screenshots/playing.png)
+![Actual Samsung Galaxy XR capture: both hand-controlled blasters](docs/screenshots/galaxy-xr.jpg)
 
 ## Play on Samsung Galaxy XR
 

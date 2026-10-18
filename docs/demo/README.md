@@ -4,7 +4,7 @@
 
 ![SFVR demo opening](poster.jpg)
 
-The finished video is exactly 60 seconds, 1920 × 1080, H.264 / AAC. It shows actual desktop gameplay from the XR build. The footage is explicitly labeled and is **not an in-headset recording**. Pointer inputs were automated to play the recorded round; the game logic and rendering are unmodified.
+The finished video is exactly 60 seconds, 1920 × 1080, H.264 / AAC. It combines actual desktop gameplay with **18 seconds recorded on a physical Samsung Galaxy XR**, showing tracked hands, head movement and scored hits. Each segment is labeled on screen. The desktop round uses automated pointer inputs; the headset segment uses the player's real hand input. The game logic and rendering are unmodified.
 
 The narrator is ElevenLabs' stock **Brian** voice using `eleven_multilingual_v2`. Timing data is used for synchronized captions. Samsung Galaxy XR is identified in the opening, persistent label, narration and end card. No custom cloned voice is used.
 
@@ -15,4 +15,4 @@ node scripts/capture-demo.mjs
 python3 scripts/render-demo.py
 ```
 
-To regenerate the voice, set `ELEVENLABS_API_KEY` in the ignored `.env` file and run `python3 scripts/narrate-demo.py` before rendering. Voice generation uses the ElevenLabs API and may incur charges on your account. Existing narration is included; generating it again is optional.
+To regenerate the voice, set `ELEVENLABS_API_KEY` in the ignored `.env` file and run `python3 scripts/narrate-demo.py` before rendering. Voice generation uses the ElevenLabs API and may incur charges on your account. The 18-second headset clip and existing narration are included; generating it again is optional.
