@@ -34,7 +34,7 @@ for n,c in enumerate(chunks):
     end=min(c[-1][2]+.12,chunks[n+1][0][1] if n+1<len(chunks) else 60)
     text=' '.join(x[0] for x in c);wrapped=textwrap.wrap(text,46)
     lines.append(f'{n+1}\n{stamp(c[0][1])} --> {stamp(end)}\n'+ '\n'.join(wrapped)+'\n')
-    position=r'{\an8\pos(960,130)}' if 11<=c[0][1]<30 else ''
+    position=r'{\an8\pos(960,130)}' if 11<=c[0][1]<27 else ''
     events.append(f'Dialogue: 2,{stamp(c[0][1],True)},{stamp(end,True)},Caption,,0,0,0,,'+position+r'\N'.join(wrapped))
 (out/'sfvr-demo.srt').write_text('\n'.join(lines))
 header='''[Script Info]
@@ -55,16 +55,16 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 events += [
  r'Dialogue: 1,0:00:00.00,0:00:57.00,Brand,,0,0,0,,SAMSUNG GALAXY XR GAME',
  r'Dialogue: 1,0:00:06.00,0:00:12.00,Source,,0,0,0,,ACTUAL DESKTOP GAMEPLAY  /  XR BUILD',
- r'Dialogue: 1,0:00:12.00,0:00:30.00,Source,,0,0,0,,CAPTURED ON SAMSUNG GALAXY XR  /  REAL HAND INPUT',
- r'Dialogue: 1,0:00:30.00,0:00:57.00,Source,,0,0,0,,ACTUAL DESKTOP GAMEPLAY  /  XR BUILD',
+ r'Dialogue: 1,0:00:12.00,0:00:27.00,Source,,0,0,0,,CAPTURED ON SAMSUNG GALAXY XR  /  REAL HAND INPUT',
+ r'Dialogue: 1,0:00:27.00,0:00:57.00,Source,,0,0,0,,ACTUAL DESKTOP GAMEPLAY  /  XR BUILD',
  r'Dialogue: 1,0:00:57.00,0:01:00.00,Title,,0,0,0,,{\pos(960,385)\fad(180,0)}SFVR',
  r'Dialogue: 1,0:00:57.00,0:01:00.00,Sub,,0,0,0,,{\pos(960,490)\fad(180,0)}BUILT FOR SAMSUNG GALAXY XR',
  r'Dialogue: 1,0:00:57.00,0:01:00.00,Caption,,0,0,0,,{\pos(960,625)\fad(180,0)\bord0}github.com/KaushikSiva/SFVR',
 ]
 (local/'captions.ass').write_text(header+'\n'.join(events)+'\n')
 c=json.loads((local/'capture.json').read_text())
-# Actual title, desktop play, 18 seconds of physical Galaxy XR capture, desktop play, end card.
+# Actual title, desktop play, 15 seconds of physical Galaxy XR capture, desktop play, end card.
 # No time acceleration or synthetic gameplay is used.
 start=c['menu'];game=c['gameplay']
-filters=f"[0:v]split=3[m][g][h];[m]trim=start={start}:duration=6,setpts=PTS-STARTPTS,fps=30,setsar=1[m0];[g]trim=start={game}:duration=6,setpts=PTS-STARTPTS,fps=30,setsar=1[g0];[2:v]trim=duration=18,setpts=PTS-STARTPTS,fps=30,setsar=1[x0];[h]trim=start={game+24}:duration=27,setpts=PTS-STARTPTS,fps=30,setsar=1[h0];[m0][g0][x0][h0]concat=n=4:v=1:a=0,tpad=stop_mode=clone:stop_duration=3,drawbox=x=0:y=0:w=iw:h=ih:color=0x0c1823@0.94:t=fill:enable='gte(t,57)',ass=.local/demo/captions.ass[v];[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,apad=whole_dur=60[a]"
+filters=f"[0:v]split=3[m][g][h];[m]trim=start={start}:duration=6,setpts=PTS-STARTPTS,fps=30,setsar=1[m0];[g]trim=start={game}:duration=6,setpts=PTS-STARTPTS,fps=30,setsar=1[g0];[2:v]trim=duration=15,setpts=PTS-STARTPTS,fps=30,setsar=1[x0];[h]trim=start={game+21}:duration=30,setpts=PTS-STARTPTS,fps=30,setsar=1[h0];[m0][g0][x0][h0]concat=n=4:v=1:a=0,tpad=stop_mode=clone:stop_duration=3,drawbox=x=0:y=0:w=iw:h=ih:color=0x0c1823@0.94:t=fill:enable='gte(t,57)',ass=.local/demo/captions.ass[v];[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,apad=whole_dur=60[a]"
 subprocess.run(['ffmpeg','-y','-hide_banner','-i',str(local/'browser-gameplay.webm'),'-i',str(out/'narration.mp3'),'-i',str(out/'galaxy-xr-clip.mp4'),'-filter_complex',filters,'-map','[v]','-map','[a]','-t','60','-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-b:a','192k','-movflags','+faststart','-metadata','title=SFVR — Built for Samsung Galaxy XR','-metadata','comment=Actual desktop gameplay and physical Samsung Galaxy XR capture, labeled on screen. ElevenLabs Brian narration.',str(out/'sfvr-demo.mp4')],cwd=root,check=True)
