@@ -3,18 +3,35 @@
   "fullRound": {
     "ready": true,
     "phase": "over",
-    "score": 23000,
-    "shots": 43,
-    "hits": 43,
+    "score": 22500,
+    "shots": 42,
+    "hits": 42,
     "shields": 3,
-    "ammo": 6,
+    "ammo": 7,
     "reloading": 0,
     "elapsed": 60,
     "remaining": 0,
     "xr": false,
-    "triangles": 412657,
-    "drawCalls": 115,
-    "targets": []
+    "navigation": {
+      "position": {
+        "x": 0,
+        "z": 6.5
+      },
+      "yaw": 0,
+      "teleporting": false,
+      "target": null
+    },
+    "triangles": 417293,
+    "drawCalls": 104,
+    "targets": [
+      {
+        "id": 35,
+        "hp": 1,
+        "x": 762.951446797682,
+        "y": 432.3798099822577,
+        "visible": true
+      }
+    ]
   },
   "mobile": "touch hit passed; no overflow",
   "errors": []

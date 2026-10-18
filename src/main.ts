@@ -3,6 +3,7 @@ import {Game} from './game';
 import {Sound} from './audio';
 import {buildLevel} from './level';
 import {makeBlaster,makeDrone} from './drone';
+import {Locomotion} from './locomotion';
 import type {Target} from './game';
 
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -45,21 +46,22 @@ const hudCanvas=document.createElement('canvas');hudCanvas.width=1024;hudCanvas.
 const hudContext=hudCanvas.getContext('2d')!;
 const hudTexture=new THREE.CanvasTexture(hudCanvas);hudTexture.colorSpace=THREE.SRGBColorSpace;
 const xrHud=new THREE.Mesh(new THREE.PlaneGeometry(.98,.245),new THREE.MeshBasicMaterial({map:hudTexture,transparent:true,depthTest:false,depthWrite:false}));
-xrHud.position.set(0,-.39,-1.45);xrHud.renderOrder=1000;xrHud.visible=false;camera.add(xrHud);
+xrHud.name='XR status and movement';xrHud.position.set(0,-.39,-1.45);xrHud.renderOrder=1000;xrHud.visible=false;camera.add(xrHud);
 let hudLast='',hudTime=0,domUpdateAt=0;
 function drawXRHUD(){
- const message=game.phase==='ready'?'POINT + PINCH TO START':game.phase==='over'?'ROUND OVER · SELECT TO PLAY AGAIN':game.phase==='paused'?'PAUSED · SELECT TO RESUME':`SCORE ${String(game.score).padStart(5,'0')}    ${game.remaining}s    SHIELDS ${game.shields}`;
- const detail=game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:'AIM AT THE DRONES'}`):'SFVR / ALAMO SQUARE';
- const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,177);hudTexture.needsUpdate=true;
+ const message=locomotion.aiming?'RELEASE PINCH TO MOVE':game.phase==='ready'?'POINT + PINCH TO START':game.phase==='over'?'ROUND OVER · SELECT TO PLAY AGAIN':game.phase==='paused'?'PAUSED · SELECT TO RESUME':`SCORE ${String(game.score).padStart(5,'0')}    ${game.remaining}s    SHIELDS ${game.shields}`;
+ const detail=locomotion.aiming?(locomotion.valid?'CLEAR DESTINATION':'CHOOSE CLEAR GROUND INSIDE THE PARK'):game.phase==='playing'?(game.reloadLeft>0?'RELOADING…':`AMMO ${game.ammo}/12    ${game.combo>1?'COMBO ×'+game.combo:'AIM AT THE DRONES'}`):'SFVR / ALAMO SQUARE';
+ const text=message+detail;if(text===hudLast&&clock-hudTime<1)return;hudLast=text;hudTime=clock;hudContext.clearRect(0,0,1024,256);hudContext.fillStyle='rgba(11,25,35,0.86)';hudContext.fillRect(0,0,1024,256);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(0,0,1024,4);hudContext.textAlign='center';hudContext.font='bold 37px monospace';hudContext.fillStyle='#fff3dc';hudContext.fillText(message,512,106);hudContext.font='25px monospace';hudContext.fillStyle='#ffa46c';hudContext.fillText(detail,512,167);hudContext.font='20px monospace';hudContext.fillStyle='#dedbd0';hudContext.fillText('AIM AT GROUND + PINCH TO MOVE',430,222);hudContext.fillStyle='#ff7b3d';hudContext.fillRect(840,183,170,57);hudContext.font='bold 24px monospace';hudContext.fillStyle='#14212a';hudContext.fillText('HOME',925,221);hudTexture.needsUpdate=true;
 }
 const controllers=[renderer.xr.getController(0),renderer.xr.getController(1)];
 const controllerHeld=new Set<THREE.XRTargetRaySpace>();
+const locomotion=new Locomotion(rig,camera,renderer,scene,controllers,xrHud,()=>game.phase==='playing',ray=>game.targets.some(t=>ray.intersectsSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85))));
 for(const controller of controllers){
  rig.add(controller);const gun=makeBlaster();gun.scale.setScalar(.6);gun.position.set(0,-.025,-.04);controller.add(gun);controller.userData.gun=gun;
- const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-12)]),new THREE.LineBasicMaterial({color:'#ff9858',transparent:true,opacity:.28}));controller.add(line);
+ const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-12)]),new THREE.LineBasicMaterial({color:'#ff9858',transparent:true,opacity:.28}));controller.add(line);controller.userData.line=line;
  const cursor=new THREE.Mesh(new THREE.RingGeometry(.045,.06,24),new THREE.MeshBasicMaterial({color:'#ffb469',transparent:true,opacity:.85,depthWrite:false}));cursor.position.z=-12;controller.add(cursor);controller.userData.cursor=cursor;
- controller.addEventListener('selectstart',()=>{sound.unlock();if(game.phase==='ready'||game.phase==='over'){start();return;}if(game.phase==='paused'){resume();return;}controllerHeld.add(controller);fireFromController(controller)});
- controller.addEventListener('selectend',()=>controllerHeld.delete(controller));controller.addEventListener('disconnected',()=>controllerHeld.delete(controller));
+ controller.addEventListener('selectstart',()=>{sound.unlock();if(locomotion.selectStart(controller)){drawXRHUD();return;}if(game.phase==='ready'||game.phase==='over'){start();return;}if(game.phase==='paused'){resume();return;}controllerHeld.add(controller);fireFromController(controller)});
+ controller.addEventListener('selectend',()=>{controllerHeld.delete(controller);locomotion.selectEnd(controller);drawXRHUD()});controller.addEventListener('disconnected',()=>{controllerHeld.delete(controller);locomotion.cancel(controller)});
 }
 function fireFromController(controller:THREE.Object3D){
  if(!controller.visible)return;
@@ -81,13 +83,13 @@ $('xr').onclick=async()=>{
   await renderer.xr.setSession(session);
  }catch(error){toast('XR could not start. Check headset permissions and use a secure URL.');console.warn('XR session failed',error)}
 };
-renderer.xr.addEventListener('sessionstart',()=>{document.body.classList.add('xr');weapon.visible=false;xrHud.visible=true;game.laneWidth=15;rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);renderer.shadowMap.enabled=true;desktopHeld=false;keys.clear();if(game.phase==='playing')game.pause();drawXRHUD();});
-renderer.xr.addEventListener('sessionend',()=>{document.body.classList.remove('xr');weapon.visible=true;xrHud.visible=false;renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;controllerHeld.clear();camera.position.set(0,1.7,0);camera.rotation.set(.08,0,0);rig.position.set(0,0,6.5);fitViewport();if(game.phase==='playing')pause();syncUI();checkXR();});
+renderer.xr.addEventListener('sessionstart',()=>{locomotion.reset();document.body.classList.add('xr');weapon.visible=false;xrHud.visible=true;game.laneWidth=15;rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);renderer.shadowMap.enabled=true;desktopHeld=false;keys.clear();if(game.phase==='playing')game.pause();drawXRHUD();});
+renderer.xr.addEventListener('sessionend',()=>{locomotion.reset();document.body.classList.remove('xr');weapon.visible=true;xrHud.visible=false;renderer.shadowMap.enabled=true;renderer.shadowMap.needsUpdate=true;controllerHeld.clear();camera.position.set(0,1.7,0);camera.rotation.set(.08,0,0);rig.position.set(0,0,6.5);rig.rotation.set(0,0,0);fitViewport();if(game.phase==='playing')pause();syncUI();checkXR();});
 
-function start(){if(!ready)return;sound.unlock();sound.tone('start');clearDrones();clearEffects();game.start();recoil=0;keys.clear();desktopHeld=false;controllerHeld.clear();rig.position.set(0,0,6.5);camera.rotation.x=.08;syncUI();processEvents();}
-function pause(){game.pause();desktopHeld=false;controllerHeld.clear();keys.clear();syncUI()}
+function start(){if(!ready)return;locomotion.reset();sound.unlock();sound.tone('start');clearDrones();clearEffects();game.start();recoil=0;keys.clear();desktopHeld=false;controllerHeld.clear();locomotion.goHome();if(!renderer.xr.isPresenting)camera.rotation.x=.08;syncUI();processEvents();}
+function pause(){locomotion.cancel();game.pause();desktopHeld=false;controllerHeld.clear();keys.clear();syncUI()}
 function resume(){game.resume();last=performance.now();syncUI()}
-function back(){game.phase='ready';clearDrones();clearEffects();desktopHeld=false;controllerHeld.clear();keys.clear();rig.position.set(0,0,6.5);syncUI()}
+function back(){locomotion.reset();game.phase='ready';clearDrones();clearEffects();desktopHeld=false;controllerHeld.clear();keys.clear();locomotion.goHome();syncUI()}
 function syncUI(){
  const playing=game.phase==='playing'||game.phase==='paused';document.body.classList.toggle('playing',playing);
  $('menu').hidden=game.phase!=='ready';$('hud').hidden=!playing;$('pause').hidden=game.phase!=='paused';$('result').hidden=game.phase!=='over';$('footer').hidden=game.phase!=='ready';
@@ -99,7 +101,7 @@ $('play').onclick=start;$('again').onclick=start;$('resume').onclick=resume;$('q
 $('reload').onclick=()=>game.reload();$('sound').onclick=()=>{sound.enabled=!sound.enabled;$('sound').innerHTML=(sound.enabled?'SOUND ON':'SOUND OFF')+' <i>▥</i>';$('sound').setAttribute('aria-pressed',String(!sound.enabled));$('sound').setAttribute('aria-label',sound.enabled?'Mute sound':'Unmute sound');};
 $('help').onclick=()=>{pause();$<HTMLDialogElement>('help-dialog').showModal()};$('close-help').onclick=()=>$<HTMLDialogElement>('help-dialog').close();
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});window.addEventListener('blur',()=>{if(!renderer.xr.isPresenting)pause()});
-window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||$<HTMLDialogElement>('help-dialog').open)return;if(e.code==='Escape'){if(game.phase==='playing')pause();else if(game.phase==='paused')resume();}if(e.code==='KeyR')game.reload();if(['KeyA','KeyD','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.add(e.code)}});
+window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement||$<HTMLDialogElement>('help-dialog').open)return;if(e.code==='Escape'){if(game.phase==='playing')pause();else if(game.phase==='paused')resume();}if(e.code==='KeyR')game.reload();if(e.code==='KeyH'){locomotion.goHome();drawXRHUD();}if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)){e.preventDefault();keys.add(e.code)}});
 window.addEventListener('keyup',e=>keys.delete(e.code));
 function updatePointer(e:PointerEvent){const rect=canvas.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);$('reticle').style.left=e.clientX+'px';$('reticle').style.top=e.clientY+'px';$('hit-marker').style.left=e.clientX+'px';$('hit-marker').style.top=e.clientY+'px';}
 canvas.addEventListener('pointermove',updatePointer);
@@ -129,9 +131,10 @@ function processEvents(){for(const event of game.drain()){
  if(event.type==='reload')sound.tone('reload');if(event.type==='over')syncUI();
 }}
 function frame(now:number){const dt=last?Math.min((now-last)/1000,.1):0;last=now;clock+=dt;
+ locomotion.update(dt,keys);
  if(game.phase==='playing'){
   game.step(dt);processEvents();
-  if(!renderer.xr.isPresenting){if(keys.has('KeyA')||keys.has('ArrowLeft'))rig.position.x=Math.max(-4,rig.position.x-dt*2.3);if(keys.has('KeyD')||keys.has('ArrowRight'))rig.position.x=Math.min(4,rig.position.x+dt*2.3);if(desktopHeld)shootDesktop();}
+  if(!renderer.xr.isPresenting){if(desktopHeld)shootDesktop();}
   else for(const controller of controllerHeld)fireFromController(controller);
  }
  for(const t of game.targets){const d=drones.get(t.id);if(!d)continue;d.position.set(t.x,t.y,t.z);d.rotation.z=Math.sin(t.age*1.2+t.phase)*.12;for(const rotor of d.userData.rotors as THREE.Mesh[])rotor.rotation.y+=dt*45;const accent=d.userData.accent as THREE.MeshStandardMaterial;accent.emissiveIntensity=t.age>7?1.2+Math.sin(clock*14)*.7:.8;}
@@ -142,19 +145,22 @@ function frame(now:number){const dt=last?Math.min((now-last)/1000,.1):0;last=now
  if(renderer.xr.isPresenting)for(const controller of controllers){
   if(!controller.visible)continue;controller.updateWorldMatrix(true,false);matrix.identity().extractRotation(controller.matrixWorld);aimRay.origin.setFromMatrixPosition(controller.matrixWorld);aimRay.direction.set(0,0,-1).applyMatrix4(matrix).normalize();let distance=14,aimed=false;
   for(const t of game.targets){const p=aimRay.intersectSphere(new THREE.Sphere(new THREE.Vector3(t.x,t.y,t.z),t.kind==='heavy'?.95:.85),tempV);if(p){const d=p.distanceTo(aimRay.origin);if(d<distance){distance=d;aimed=true}}}
-  const cursor=controller.userData.cursor as THREE.Mesh;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(aimed?'#fff5d8':'#ffb469');
+  const navigation=locomotion.pointerTarget(controller);if(navigation){distance=navigation.distance;aimed=true;}
+  (controller.userData.line as THREE.Line).scale.z=distance/12;
+  const cursor=controller.userData.cursor as THREE.Mesh;cursor.visible=!navigation?.floor;cursor.position.z=-distance;cursor.scale.setScalar(distance/12);(cursor.material as THREE.MeshBasicMaterial).color.set(aimed?'#fff5d8':'#ffb469');
  }
  if(clock>hitUntil)$('hit-marker').style.opacity='0';if(clock>damageUntil)$('damage-flash').style.opacity='0';
  if(!renderer.xr.isPresenting&&now-domUpdateAt>70){domUpdateAt=now;
  $('score').textContent=String(game.score).padStart(5,'0');$('wave').textContent=String(game.wave).padStart(2,'0');$('time').innerHTML=game.remaining+'<span>s</span>';$('time-bar').style.width=((60-game.elapsed)/60*100)+'%';
  $('ammo').textContent=game.reloadLeft>0?'··':String(game.ammo).padStart(2,'0');$('ammo-label').textContent=game.reloadLeft>0?'RELOADING…':'/ 12  RELOAD [R]';$('reload').classList.toggle('reloading',game.reloadLeft>0);
  [...$('shields').children].forEach((e,i)=>e.classList.toggle('lost',i>=game.shields));if(game.combo===0)$('combo').textContent='';}
+ locomotion.updateMarker();
  if(renderer.xr.isPresenting)drawXRHUD();
  renderer.render(scene,camera);
 }
 renderer.setAnimationLoop(frame);
 window.addEventListener('resize',()=>{if(renderer.xr.isPresenting)return;fitViewport();renderer.setSize(innerWidth,innerHeight)});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();toast('Graphics connection lost. Reload the page to restart.');});
-function snapshot(){return {ready,phase:game.phase,score:game.score,shots:game.shots,hits:game.hits,shields:game.shields,ammo:game.ammo,reloading:game.reloadLeft,elapsed:game.elapsed,remaining:game.remaining,xr:renderer.xr.isPresenting,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,targets:game.targets.map(t=>{const p=new THREE.Vector3(t.x,t.y,t.z).project(camera);return {id:t.id,hp:t.hp,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1}})}}
+function snapshot(){return {ready,phase:game.phase,score:game.score,shots:game.shots,hits:game.hits,shields:game.shields,ammo:game.ammo,reloading:game.reloadLeft,elapsed:game.elapsed,remaining:game.remaining,xr:renderer.xr.isPresenting,navigation:{position:{x:camera.getWorldPosition(new THREE.Vector3()).x,z:camera.getWorldPosition(new THREE.Vector3()).z},yaw:rig.rotation.y,teleporting:locomotion.aiming,target:locomotion.target},triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,targets:game.targets.map(t=>{const p=new THREE.Vector3(t.x,t.y,t.z).project(camera);return {id:t.id,hp:t.hp,x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,visible:p.z<1&&Math.abs(p.x)<1&&Math.abs(p.y)<1}})}}
 if(import.meta.env.DEV)(window as any).__sfStrike={snapshot,renderer,game,scene};
 syncUI();

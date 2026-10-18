@@ -22,9 +22,18 @@
     "shields": 3,
     "ammo": 11,
     "reloading": 0,
-    "elapsed": 0.6348999999910592,
+    "elapsed": 0.6329000000059606,
     "remaining": 60,
     "xr": true,
+    "navigation": {
+      "position": {
+        "x": 0,
+        "z": 6.5
+      },
+      "yaw": 0,
+      "teleporting": false,
+      "target": null
+    },
     "triangles": 846342,
     "drawCalls": 264,
     "targets": []
@@ -38,9 +47,18 @@
     "shields": 3,
     "ammo": 10,
     "reloading": 0,
-    "elapsed": 2.1675999999940396,
+    "elapsed": 2.166100000008941,
     "remaining": 58,
     "xr": true,
+    "navigation": {
+      "position": {
+        "x": 0,
+        "z": 6.5
+      },
+      "yaw": 0,
+      "teleporting": false,
+      "target": null
+    },
     "triangles": 846342,
     "drawCalls": 264,
     "targets": []

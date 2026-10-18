@@ -12,13 +12,13 @@ SFVR is a hand-tracked arcade shooter set in San Francisco's Alamo Square. Stand
 
 Survive a complete round before the drones breach the park. Gold targets give bonus points, armored targets take two hits, and quick eliminations build a combo up to 5×. Your twelve-shot magazine reloads automatically when empty. Scores, accuracy and personal bests encourage replay.
 
-The environment uses full-volume buildings, detailed quadrotors and blasters, textured surfaces, an HDR sky, cached shadows, and vegetation. Lean or look around in XR to see the scene's depth. The headset camera follows physical movement without artificial locomotion or camera shake.
+The environment uses full-volume buildings, detailed quadrotors and blasters, textured surfaces, an HDR sky, cached shadows, and vegetation. Lean or look around in XR to see the scene's depth. Move around the park using hand teleporting or a controller stick, with collision boundaries and no camera shake.
 
 ![Actual Samsung Galaxy XR capture: both hand-controlled blasters](docs/screenshots/galaxy-xr.jpg)
 
 ## Play on Samsung Galaxy XR
 
-Open the live game in **Chrome on Galaxy XR**, choose **Enter Galaxy XR**, and allow tracking. Point and pinch once to start, then pinch at drones to shoot. Hold the pinch for repeated shots. No handheld controller is required; standard XR controller triggers also work.
+Open the live game in **Chrome on Galaxy XR**, choose **Enter Galaxy XR**, and allow tracking. Point and pinch once to start, then pinch at drones to shoot. Hold the pinch for repeated shots. To move, aim at clear ground, hold a pinch, then release on the orange ring. Red means blocked. Select **HOME** on the headset HUD to return. Controllers support left-stick travel and right-stick 45° turns.
 
 For local development, connect the headset by USB, enable USB debugging, and accept the headset's authorization prompt:
 
@@ -31,7 +31,7 @@ npm run play:xr
 
 The launcher starts the server, forwards its port, opens headset Chrome, and restores forwarding after USB reconnections. Keep the terminal open. On macOS, you can also double-click **Launch SFVR.command** after installing dependencies.
 
-For a laptop preview, run `npm run dev` and open **http://127.0.0.1:5186**. Mouse aims, click fires, **A/D** strafes, **R** reloads, and **Escape** pauses. Touchscreens support tap-to-shoot.
+For a laptop preview, run `npm run dev` and open **http://127.0.0.1:5186**. Mouse aims, click fires, **WASD / arrows** move, **H** returns home, **R** reloads, and **Escape** pauses. Touchscreens support tap-to-shoot.
 
 ## Tech stack
 
@@ -47,7 +47,7 @@ For a laptop preview, run `npm run dev` and open **http://127.0.0.1:5186**. Mous
 
 ## Tested, with clear boundaries
 
-The project has run on a physical Galaxy XR, with both tracked hands detected and scored shots observed. Automated checks cover a full round, touch input, reload, pause, replay and simulated stereo hand input. Run `npm test`, `npm run build`, `npm run test:browser`, and `npm run test:xr`.
+The project has run on a physical Galaxy XR, with both tracked hands detected and scored shots observed. Automated checks cover a full round, touch input, reload, pause, replay and simulated stereo hand input. Run `npm test`, `npm run build`, `npm run test:browser`, `npm run test:xr`, and `npm run test:locomotion`.
 
 Qualcomm involvement is through the headset's Snapdragon hardware and browser rendering. This version has **no QNN or ExecuTorch inference**. The city is an authored approximation; sustained performance and comfort need broader device testing.
 

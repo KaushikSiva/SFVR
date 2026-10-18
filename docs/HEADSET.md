@@ -42,13 +42,19 @@ serial. The automatic reconnection watcher targets Samsung model SM-I610.
 ## Controls
 
 - **Hands:** point the ray, pinch to start/fire/replay, hold for repeat fire.
-- **Controllers:** aim and use the standard trigger/select action.
-- **Laptop:** mouse and click, A/D or arrows to strafe, R reload, Escape pause.
+- **Teleport:** during play, point either hand at clear ground. Hold a pinch to choose a destination and release to move. An orange ring means clear; red means blocked. Aim away before releasing to cancel.
+- **Home:** point at **HOME** on the headset HUD and pinch to return to the starting position.
+- **Controllers:** trigger fires or teleports when aimed at ground; the left stick moves relative to your viewing direction, and the right stick turns 45° per deflection. Return the stick to center before turning again.
+- **Laptop:** mouse and click, WASD or arrows to move, H return home, R reload, Escape pause.
 - **Phone:** tap drones; tap the ammo counter to reload.
+
+Virtual travel stays within the flat park area and avoids planters, benches and the litter bin. Teleporting has a 10-meter range and a brief fade; hand tracking loss or pausing cancels an armed teleport. Head height and physical tracking are preserved. Physical movement itself is not constrained by the game's navigation boundaries.
 
 The pale aiming ring confirms that a ray intersects a drone. Empty magazines
 reload automatically. Use the headset's system controls to exit immersive mode;
 the game pauses on exit or when the XR session loses visibility.
+
+![Teleport destination and Home control in the generic stereo test runtime](screenshots/teleport.png)
 
 ## Validation
 
@@ -57,3 +63,5 @@ tracked hands, and registered successful shots. The generic IWER test rig is
 only for WebXR API/input regression checks, not Samsung hardware emulation.
 
 Official platform documentation: [Android XR for WebXR](https://developer.android.com/develop/xr/web).
+
+Locomotion has automated coverage for hand teleporting, room-scale offsets, blocked destinations, cancellation, Home, stick movement, snap turns and keyboard controls. Physical Galaxy XR movement/comfort validation is still pending.

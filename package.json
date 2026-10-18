@@ -12,7 +12,8 @@
     "test:xr": "node scripts/check-xr.mjs",
     "headset": "node scripts/galaxy-xr.mjs",
     "headset:watch": "node scripts/watch-headset.mjs",
-    "play:xr": "node scripts/start-headset.mjs"
+    "play:xr": "node scripts/start-headset.mjs",
+    "test:locomotion": "node scripts/check-locomotion.mjs"
   },
   "dependencies": {
     "three": "0.185.1"

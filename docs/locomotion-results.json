@@ -1,0 +1,12 @@
+{
+  "validation": "Generic WebXR input regression, not physical hardware",
+  "handTeleport": "release lands tracked viewer at destination without firing",
+  "blockedDestination": "planter rejected",
+  "cancel": "moving the ray off the floor cancels teleport",
+  "trackingLoss": "disconnect cancels the armed teleport without moving",
+  "pause": "pause cancels teleport",
+  "home": "HUD HOME returns the tracked viewer to the start",
+  "controller": "left-stick movement; one 45° turn per right-stick deflection, around the viewer",
+  "desktop": "W moves forward; H resets; pause stops movement",
+  "errors": []
+}
